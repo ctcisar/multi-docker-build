@@ -45,6 +45,7 @@ SUPPORTED_OPTIONS = frozenset(
 DOCKER = "docker"
 DOCKER_BUILD_COMMAND_TEMPLATE: List[str] = [
     DOCKER,
+    "buildx",
     "build",
     "-q",
     "-t",
