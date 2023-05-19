@@ -52,6 +52,7 @@ DOCKER_BUILD_COMMAND_TEMPLATE: List[str] = [
     "{label}",
     "-f",
     "{dockerfile_path}",
+    "-o type=docker",
     ".",
 ]
 DOCKER_TAG_COMMAND_TEMPLATE: List[str] = [
