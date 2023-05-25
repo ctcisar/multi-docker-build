@@ -47,24 +47,36 @@ DOCKER_BUILD_COMMAND_TEMPLATE: List[str] = [
     DOCKER,
     "buildx",
     "build",
-    "-q",
+    # "-q",
     "-t",
     "{label}",
     "-f",
     "{dockerfile_path}",
-    "-o type=docker",
     ".",
+    "--cache-from=inline",
 ]
 DOCKER_TAG_COMMAND_TEMPLATE: List[str] = [
     DOCKER,
-    "tag",
-    "{image_id}",
+    "buildx",
+    "build",
+    "-t",
     "{tag_name}",
+    "-f",
+    "{dockerfile_path}",
+    ".",
+    "--cache-from=inline",
 ]
 DOCKER_PUSH_COMMAND_TEMPLATE: List[str] = [
     DOCKER,
-    "push",
-    "{image_id}",
+    "buildx",
+    "build",
+    "-t",
+    "{label}",
+    "-f",
+    "{dockerfile_path}",
+    ".",
+    "--cache-from=inline",
+    "--push",
 ]
 
 GIT = "git"
@@ -250,14 +262,19 @@ def check_options(options: Dict[str, Optional[str]]):
         warnings.warn(f"Unsupported Docker option(s): {option_str}")
 
 
-def tag_image(image_id: str, tag_name: str, pretend: bool):
+def tag_image(
+    image_id: str, tag_name: str, dockerfile_path: str, platforms_str: str, pretend: bool
+):
     docker_tag_command = [
         piece.format(
             image_id=image_id,
             tag_name=tag_name,
+            dockerfile_path=dockerfile_path,
         )
         for piece in DOCKER_TAG_COMMAND_TEMPLATE
     ]
+    if platforms_str:
+        docker_tag_command.append(f"--platform={platforms_str}")
     print_run(docker_tag_command, pretend)
     print("Tagged image", image_id, "as", tag_name)
 
@@ -274,8 +291,8 @@ def build(
     docker_images = read_images(base_directory)
     check_submodules(base_directory, ignore_missing_submodules)
     timestamp = datetime.now().strftime(TIMESTAMP_FORMAT)
-    images_to_push = []
     for label_base, full_dockerfile_path, options in docker_images:
+        images_to_push = []
         label = f"{label_base}:latest"
         check_options(options)
 
@@ -312,30 +329,38 @@ def build(
 
         if tag_timestamp:
             timestamp_tag_name = f"{label_base}:{timestamp}"
-            tag_image(image_id, timestamp_tag_name, pretend)
+            tag_image(image_id, timestamp_tag_name, dockerfile_path, platforms_str, pretend)
             images_to_push.append(timestamp_tag_name)
 
         if tag_git_describe:
             git_version = get_git_output(build_dir, GIT_VERSION_COMMAND)
             version_without_v = strip_v_from_version_number(git_version)
             version_tag_name = f"{label_base}:{version_without_v}"
-            tag_image(image_id, version_tag_name, pretend)
+            tag_image(image_id, version_tag_name, dockerfile_path, platforms_str, pretend)
             images_to_push.append(version_tag_name)
 
         if tag is not None:
             tag_name = f"{label_base}:{tag}"
-            tag_image(image_id, tag_name, pretend)
+            tag_image(image_id, tag_name, dockerfile_path, platforms_str, pretend)
             images_to_push.append(tag_name)
 
-    if push:
-        for image_id in images_to_push:
-            docker_push_command = [
-                piece.format(
-                    image_id=image_id,
-                )
-                for piece in DOCKER_PUSH_COMMAND_TEMPLATE
-            ]
-            print_run(docker_push_command, pretend)
+        # move this to inside the loop so we can use the same label and path strings.
+        # this means it'll build then push all images for one docker_images.txt entry
+        # instead of building all entries and then pushing them.
+        if push:
+            for image_id in images_to_push:
+                docker_push_command = [
+                    piece.format(
+                        label=label,
+                        dockerfile_path=dockerfile_path,
+                    )
+                    for piece in DOCKER_PUSH_COMMAND_TEMPLATE
+                ]
+                if PLATFORMS_OPTION in options:
+                    platforms_str = ",".join(options[PLATFORMS_OPTION].split("&"))
+                    docker_push_command.append(f"--platform={platforms_str}")
+
+                print_run(docker_push_command, pretend)
 
 
 def main():
@@ -378,7 +403,7 @@ def main():
         action="store_true",
         help="""
             Allow building Docker containers if "git submodule" reports that at least
-            one submodule is uninitialized.            
+            one submodule is uninitialized.
         """,
     )
     p.add_argument(
