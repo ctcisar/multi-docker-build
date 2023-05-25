@@ -319,6 +319,7 @@ def build(
             for piece in DOCKER_BUILD_COMMAND_TEMPLATE
         ]
 
+        platforms_str = ''
         if PLATFORMS_OPTION in options:
             platforms_str = ",".join(options[PLATFORMS_OPTION].split("&"))
             docker_build_command.append(f"--platform={platforms_str}")
