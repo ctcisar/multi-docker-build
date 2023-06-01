@@ -53,8 +53,8 @@ DOCKER_BUILD_COMMAND_TEMPLATE: List[str] = [
     "-f",
     "{dockerfile_path}",
     ".",
-    "--build-arg BUILDKIT_INLINE_CACHE=1",
-    "--output type=cacheonly",
+    "--build-arg=\"BUILDKIT_INLINE_CACHE=1\"",
+    "--output=type=cacheonly",
 ]
 DOCKER_TAG_COMMAND_TEMPLATE: List[str] = [
     DOCKER,
@@ -65,9 +65,9 @@ DOCKER_TAG_COMMAND_TEMPLATE: List[str] = [
     "-f",
     "{dockerfile_path}",
     ".",
-    "--build-arg BUILDKIT_INLINE_CACHE=1",
+    "--build-arg=\"BUILDKIT_INLINE_CACHE=1\"",
     "--push"
-    
+
 ]
 DOCKER_PUSH_COMMAND_TEMPLATE: List[str] = [
     DOCKER,
@@ -78,7 +78,7 @@ DOCKER_PUSH_COMMAND_TEMPLATE: List[str] = [
     "-f",
     "{dockerfile_path}",
     ".",
-    "--build-arg BUILDKIT_INLINE_CACHE=1",
+    "--build-arg=\"BUILDKIT_INLINE_CACHE=1\"",
     "--push",
 ]
 
