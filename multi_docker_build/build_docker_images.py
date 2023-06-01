@@ -334,19 +334,19 @@ def build(
         if tag_timestamp:
             timestamp_tag_name = f"{label_base}:{timestamp}"
             tag_image(image_id, timestamp_tag_name, dockerfile_path, platforms_str, pretend)
-            images_to_push.append(timestamp_tag_name)
+            # images_to_push.append(timestamp_tag_name)
 
         if tag_git_describe:
             git_version = get_git_output(build_dir, GIT_VERSION_COMMAND)
             version_without_v = strip_v_from_version_number(git_version)
             version_tag_name = f"{label_base}:{version_without_v}"
             tag_image(image_id, version_tag_name, dockerfile_path, platforms_str, pretend)
-            images_to_push.append(version_tag_name)
+            # images_to_push.append(version_tag_name)
 
         if tag is not None:
             tag_name = f"{label_base}:{tag}"
             tag_image(image_id, tag_name, dockerfile_path, platforms_str, pretend)
-            images_to_push.append(tag_name)
+            # images_to_push.append(tag_name)
 
         # move this to inside the loop so we can use the same label and path strings.
         # this means it'll build then push all images for one docker_images.txt entry
